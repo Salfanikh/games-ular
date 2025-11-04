@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🐍 Game Snake</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #283c86, #45a247);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      text-shadow: 1px 1px 4px black;
+    }
+
+    #gameArea {
+      border: 3px solid white;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      width: 400px;
+      height: 400px;
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(20, 1fr);
+      grid-template-rows: repeat(20, 1fr);
+    }
+
+    .snake {
+      background-color: #00ffcc;
+      border-radius: 4px;
+      box-shadow: 0 0 5px #00ffcc;
+    }
+
+    .food {
+      background-color: #ff4d4d;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #ff4d4d;
+    }
+
+    #score {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 10px;
+    }
+
+    #restartBtn {
+      display: none;
+      background: #ff5f6d;
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+
+    #restartBtn:hover {
+      background: #ff2e4c;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐍 Game Snake</h1>
+  <div id="score">Skor: 0</div>
+  <div id="gameArea"></div>
+  <button id="restartBtn">Main Lagi</button>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const scoreDisplay = document.getElementById("score");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const gridSize = 20;
+    let snake = [{ x: 10, y: 10 }];
+    let food = randomFood();
+    let direction = { x: 0, y: 0 };
+    let score = 0;
+    let gameInterval;
+
+    // Buat posisi makanan secara acak
+    function randomFood() {
+      return {
+        x: Math.floor(Math.random() * gridSize),
+        y: Math.floor(Math.random() * gridSize),
+      };
+    }
+
+    // Menggambar elemen di dalam game
+    function drawGame() {
+      gameArea.innerHTML = "";
+
+      // Gambar snake
+      snake.forEach((segment) => {
+        const snakeElement = document.createElement("div");
+        snakeElement.style.gridColumnStart = segment.x + 1;
+        snakeElement.style.gridRowStart = segment.y + 1;
+        snakeElement.classList.add("snake");
+        gameArea.appendChild(snakeElement);
+      });
+
+      // Gambar food
+      const foodElement = document.createElement("div");
+      foodElement.style.gridColumnStart = food.x + 1;
+      foodElement.style.gridRowStart = food.y + 1;
+      foodElement.classList.add("food");
+      gameArea.appendChild(foodElement);
+    }
+
+    // Update posisi snake
+    function updateGame() {
+      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+      // Jika tidak bergerak
+      if (direction.x === 0 && direction.y === 0) return drawGame();
+
+      // Game over jika menabrak dinding
+      if (head.x < 0 || head.x >= gridSize || head.y < 0 || head.y >= gridSize) {
+        return endGame();
+      }
+
+      // Game over jika menabrak tubuh sendiri
+      for (let segment of snake) {
+        if (segment.x === head.x && segment.y === head.y) return endGame();
+      }
+
+      // Makan makanan
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreDisplay.textContent = "Skor: " + score;
+        food = randomFood();
+      } else {
+        snake.pop();
+      }
+
+      drawGame();
+    }
+
+    // Kontrol arah menggunakan tombol panah
+    document.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowUp":
+          if (direction.y === 1) break;
+          direction = { x: 0, y: -1 };
+          break;
+        case "ArrowDown":
+          if (direction.y === -1) break;
+          direction = { x: 0, y: 1 };
+          break;
+        case "ArrowLeft":
+          if (direction.x === 1) break;
+          direction = { x: -1, y: 0 };
+          break;
+        case "ArrowRight":
+          if (direction.x === -1) break;
+          direction = { x: 1, y: 0 };
+          break;
+      }
+    });
+
+    function endGame() {
+      clearInterval(gameInterval);
+      const overMsg = document.createElement("div");
+      overMsg.textContent = "💀 Game Over! Skor Akhir: " + score;
+      overMsg.style.position = "absolute";
+      overMsg.style.top = "50%";
+      overMsg.style.left = "50%";
+      overMsg.style.transform = "translate(-50%, -50%)";
+      overMsg.style.background = "rgba(0,0,0,0.7)";
+      overMsg.style.padding = "20px";
+      overMsg.style.borderRadius = "10px";
+      gameArea.appendChild(overMsg);
+      restartBtn.style.display = "inline-block";
+    }
+
+    restartBtn.addEventListener("click", () => {
+      snake = [{ x: 10, y: 10 }];
+      direction = { x: 0, y: 0 };
+      score = 0;
+      scoreDisplay.textContent = "Skor: 0";
+      food = randomFood();
+      restartBtn.style.display = "none";
+      startGame();
+    });
+
+    function startGame() {
+      drawGame();
+      clearInterval(gameInterval);
+      gameInterval = setInterval(updateGame, 150);
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
